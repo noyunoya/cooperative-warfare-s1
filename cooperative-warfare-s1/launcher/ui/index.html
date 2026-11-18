@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Cooperative Warfare launcher</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0b1118;--panel:#121c26;--panel2:#18242f;--line:#26384a;--txt:#e6e1d3;--mut:#8a9aa8;--p1:#2fb7c9;--p2:#f0a030;--ok:#6fcf7f;--bad:#e5645a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 "Segoe UI",system-ui,sans-serif;min-height:100vh}
+header{position:relative;height:190px;overflow:hidden;border-bottom:1px solid var(--line)}
+header img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+header::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,var(--bg))}
+.brand{position:absolute;left:28px;bottom:16px;z-index:2}
+.brand h1{margin:0;font:700 30px/1 "Bahnschrift","Segoe UI",sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.brand h1 span{color:var(--p2)}
+.brand p{margin:4px 0 0;color:var(--mut);letter-spacing:.2em;font-size:11px;text-transform:uppercase}
+.ver{position:absolute;right:20px;top:12px;z-index:2;color:#d5ddd8;font-size:12px;text-shadow:0 1px 6px #000,0 0 3px #000}
+nav{display:flex;gap:2px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;color:var(--mut);padding:12px 18px;font:600 13px inherit;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent}
+nav button.on{color:var(--txt);border-color:var(--p2)}
+main{padding:22px 28px;max-width:980px}
+.tab{display:none}.tab.on{display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px}
+.card h2{margin:0 0 4px;font-size:15px;letter-spacing:.1em;text-transform:uppercase}
+.card p{margin:0 0 14px;color:var(--mut)}
+.c1{border-top:3px solid var(--p1)}.c2{border-top:3px solid var(--p2)}
+.btn{display:inline-block;background:var(--panel2);color:var(--txt);border:1px solid var(--line);padding:9px 16px;border-radius:4px;font:600 13px inherit;cursor:pointer;margin:0 8px 8px 0}
+.btn:hover{border-color:var(--mut)}
+.btn.main{background:var(--p2);color:#1a1206;border-color:var(--p2)}
+.btn.alt{background:var(--p1);color:#04181c;border-color:var(--p1)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+label{display:block;margin:10px 0 4px;color:var(--mut);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+select{width:100%;background:var(--bg);color:var(--txt);border:1px solid var(--line);padding:8px 10px;border-radius:4px;font:14px inherit}
+input[type=text]{width:100%;background:var(--bg);color:var(--txt);border:1px solid var(--line);padding:8px 10px;border-radius:4px;font:14px Consolas,monospace}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{border:1px solid var(--line);border-radius:12px;padding:2px 10px;font:12px Consolas,monospace;cursor:pointer}
+.st{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px;font-size:13px}
+.st span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px}
+.st span.ok::before{background:var(--ok)}
+pre{background:#070b10;border:1px solid var(--line);border-radius:4px;padding:12px;height:300px;overflow:auto;font:12px Consolas,monospace;color:#b9c6d2;white-space:pre-wrap}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:4px;opacity:0;transition:.25s}
+.toast.show{opacity:1}
+.small{color:var(--mut);font-size:12px}
+.games{display:flex;gap:0;background:#070b10;border-bottom:1px solid var(--line);padding:0 20px}
+.games button{background:none;border:0;color:var(--mut);padding:11px 20px;font:700 12px inherit;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;border-bottom:3px solid transparent;position:relative}
+.games button.on{color:var(--txt);border-color:var(--p2)}
+.games button small{display:block;font:500 9px inherit;letter-spacing:.14em;color:var(--mut);margin-top:1px}
+body[data-g=bo1]{--p1:#ff6a55;--p2:#e0352b}
+body[data-g=nx1]{--p1:#6fcf7f;--p2:#3fb7c9}
+body[data-g=s1]{--p1:#8fa6b8;--p2:#5ec8ff}
+body[data-g=s1] header::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(11,17,24,.85),transparent 55%)}
+body[data-g=s1] .brand h1{text-shadow:0 2px 18px #000}
+.pre{display:grid;gap:6px;margin:6px 0 4px}
+.pre label{display:flex;gap:8px;align-items:center;margin:0;padding:8px 10px;border:1px solid var(--line);border-radius:4px;color:var(--txt);text-transform:none;letter-spacing:0;font-size:13px;cursor:pointer}
+.pre label:has(input:checked){border-color:var(--p2);background:var(--panel2)}
+#art2{display:none}
+header{transition:height .25s}
+header.portrait{height:240px}
+header.portrait #art{filter:blur(24px) brightness(.5) saturate(.9);transform:scale(1.2)}
+header.portrait #art2{display:block;position:absolute;left:auto;right:0;top:0;width:48%;height:100%;object-fit:cover;z-index:0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 40%);mask-image:linear-gradient(90deg,transparent,#000 40%)}
+header.portrait::after{background:linear-gradient(90deg,var(--bg) 0%,rgba(11,17,24,.55) 38%,transparent 70%),linear-gradient(180deg,transparent 55%,var(--bg))}
+header.light #art2{filter:brightness(.72) contrast(1.08)}
+#art3{display:none}
+header.duo #art3{display:block;position:absolute;left:auto;inset:auto;right:30%;top:0;width:36%;height:100%;object-fit:cover;z-index:0;filter:brightness(.7) contrast(1.1);-webkit-mask-image:linear-gradient(90deg,transparent,#000 35%,#000 70%,transparent);mask-image:linear-gradient(90deg,transparent,#000 35%,#000 70%,transparent)}
+header.duo #art2{width:42%}
+body[data-g=mw3]{--bg:#0a110d;--panel:#101a14;--panel2:#16231b;--line:#233d2c;--p1:#58a86a;--p2:#8cc63f}
+body[data-g=mw3] header::after{background:linear-gradient(90deg,var(--bg) 0%,rgba(10,17,13,.55) 38%,transparent 70%),linear-gradient(180deg,transparent 55%,var(--bg))}
+body[data-g=mw3] .btn.main{color:#0d1a06}
+</style></head><body>
+<header id="hdr"><img id="art" src="art-s1.jpg" alt=""><img id="art2" alt=""><img id="art3" alt=""><div class="ver" id="ver"></div>
+<div class="brand"><h1>Cooperative <span>Warfare</span></h1><p>Modern Warfare 3 &middot; campaign co-op</p></div></header>
+<div class="games" id="games">
+ <button data-g="mw3">Modern Warfare 3<small>TeknoMW3 &middot; local &amp; online</small></button>
+ <button data-g="bo1">Black Ops<small>Cuba co-op</small></button>
+ <button data-g="nx1">Nexus<small>NX1 co-op</small></button>
+ <button data-g="s1">Blacksmith<small>S1 &middot; recompiled</small></button>
+</div>
+<nav id="nav"><button class="on" data-t="play">Play</button><button data-t="setup">Setup</button><button data-t="log">Log</button></nav>
+<main>
+<div class="st" id="status"></div>
+
+<section class="tab on" id="t-play">
+ <div class="grid">
+  <div class="card c1"><h2>Local co-op</h2><p>Both players on this PC. Player 1 is your normal Tekno game, player 2 is a second window.</p>
+   <button class="btn alt" id="b-p1">1 &middot; Start player 1</button>
+   <p class="small" style="margin:0 0 10px">Open a Private Match and wait for "Need one more player...", then:</p>
+   <button class="btn main" id="b-p2">2 &middot; Start player 2</button>
+   <button class="btn" id="b-arr">Snap windows (layout in Setup)</button>
+  </div>
+  <div class="card c2"><h2>Join a friend</h2><p>Connect to a host with the same command the local launcher uses (+server).</p>
+   <label>Host address</label><input type="text" id="joinIP" placeholder="e.g. 26.12.34.56">
+   <div style="margin-top:12px"><button class="btn main" id="b-join">Connect</button></div>
+   <p class="small">The host must already be in the Private Match lobby. Radmin / Hamachi addresses work.</p>
+  </div>
+ </div>
+ <div class="card" style="margin-top:16px"><h2>Hosting</h2><p>Start your game, open a Private Match, and give a friend one of these addresses.</p>
+  <button class="btn alt" id="b-host">Start my game (host)</button>
+  <div class="chips" id="ips"></div></div>
+</section>
+
+<section class="tab" id="t-setup">
+ <div class="grid">
+  <div class="card"><h2>Game</h2>
+   <label>TeknoMW3 / game folder</label><input type="text" id="gameDir">
+   <label>Player 2 folder (created for you)</label><input type="text" id="p2Dir">
+   <div style="margin-top:12px"><button class="btn alt" id="b-prep">Prepare player 2 folder</button><button class="btn" id="b-open">Open game folder</button></div>
+   <p class="small">Run "Prepare" once, and again after a game update. It copies the exe and settings, big folders are linked, not duplicated.</p>
+  </div>
+  <div class="card"><h2>Player 2</h2>
+   <label>Name</label><input type="text" id="p2Name">
+   <label>Local host address (for local co-op)</label><input type="text" id="hostIP">
+   <label>Player 2 port</label><input type="text" id="p2Port">
+   <label>Extra launch arguments</label><input type="text" id="extraArgs" placeholder="optional">
+   <label><input type="checkbox" id="arrange"> Snap windows automatically</label>
+   <label>Window layout</label>
+   <select id="layout">
+    <option value="side_fill">Side by side, fill each half (old)</option>
+    <option value="side_keep">Side by side, keep shape (no stretching)</option>
+    <option value="stacked">Stacked: player 1 top, player 2 bottom (wide)</option>
+   </select>
+   <label><input type="checkbox" id="console"> Start with -console</label>
+   <div style="margin-top:12px"><button class="btn main" id="b-save">Save</button></div>
+  </div>
+ </div>
+ <div class="card" style="margin-top:16px"><h2>Patches</h2>
+  <p>Zone files with the co-op patches have a backup next to them (.orig). This puts the originals back.</p>
+  <button class="btn" id="b-restore">Restore original zone files</button></div>
+</section>
+
+<section class="tab" id="t-game">
+ <div class="grid">
+  <div class="card c2"><h2 id="g-title"></h2><p id="g-desc"></p>
+   <button class="btn main" id="g-launch">Launch</button><button class="btn" id="g-open">Open game folder</button>
+   <div id="g-s1extra" style="display:none"><button class="btn" id="g-s1log">Open last run log</button></div>
+   <div class="st" id="g-status" style="margin:12px 0 0"></div>
+  </div>
+  <div class="card"><h2>Paths</h2>
+   <label>Program (exe)</label><input type="text" id="g-exe">
+   <label>Game / data folder</label><input type="text" id="g-dir">
+   <label>Extra launch arguments</label><input type="text" id="g-args" placeholder="optional">
+   <div style="margin-top:12px"><button class="btn alt" id="g-save">Save</button></div>
+  </div>
+ </div>
+ <div class="card" id="g-s1patch" style="margin-top:16px;display:none"><h2>Fusion co-op patch</h2>
+  <p>Puts <b>Fusion</b> into the Spec Ops mission list and starts it in 2-player split screen. The launcher keeps your original <code>ui.ff</code> / <code>patch.ff</code> as <code>.bak</code> files.</p>
+  <div class="st" id="g-s1pst" style="margin:6px 0 10px"></div>
+  <button class="btn main" id="g-s1p24a">Install v24a (test 1: P2 gun)</button>
+  <button class="btn main" id="g-s1p24b">Install v24b (test 2: + viewmodel)</button>
+  <button class="btn main" id="g-s1p24c">Install v24c (test 3: + VTOL seat)</button>
+  <button class="btn" id="g-s1p18">Install v18 (P2 gun only)</button>
+  <button class="btn" id="g-s1p17">Install v17 (guns test)</button>
+  <button class="btn" id="g-s1p16">Install v16 (stable, no weapons)</button>
+  <button class="btn alt" id="g-s1rst">Restore original files</button>
+  <p class="small">Known: Player 2 is not seated in the VTOL yet and cannot be downed (revive port from MW3 in progress).</p>
+ </div>
+ <div class="card" id="g-s1card" style="margin-top:16px;display:none"><h2>Graphics preset</h2>
+  <p>The recompiled game does not accept GPU options on the command line, so the launcher writes the chosen preset into <code>s1_sp.toml</code> right before it starts the game. Try them in order until the white-out / flicker goes away.</p>
+  <div class="pre" id="g-pre"></div>
+  <p class="small">The game's console output is saved to <code>s1_run_log.txt</code> next to the launcher - send that when something looks wrong.</p>
+ </div>
+</section>
+
+<section class="tab" id="t-bo1">
+ <div class="st" id="b-status"></div>
+ <div class="grid">
+  <div class="card c2"><h2>Host</h2><p>Player 1 hosts and waits for everyone. Players in total:</p>
+   <select id="b-players"><option>2</option><option>3</option><option>4</option></select>
+   <div style="margin-top:12px"><button class="btn main" id="b-host2">Host &middot; <span class="nm1">Mason</span> (starts the map)</button></div>
+   <button class="btn" id="b-lobby">Host to main menu only (open the co-op lobby)</button>
+   <p class="small">Use the second one to set up the lobby first, then join with players 2-4.</p>
+  </div>
+  <div class="card c1"><h2>Join</h2><p>Each player starts on its own port and connects to the host.</p>
+   <button class="btn alt" id="b-j2">Join as <span class="nm2">Woods</span> (player 2)</button>
+   <button class="btn alt" id="b-j3">Join as <span class="nm3">Bowman</span> (player 3)</button>
+   <button class="btn alt" id="b-j4">Join as <span class="nm4">Carlos</span> (player 4)</button>
+   <label>Host address</label><input type="text" id="b-connect" placeholder="127.0.0.1 for this PC, or the host's Radmin / Hamachi address">
+  </div>
+ </div>
+ <div class="card" style="margin-top:16px"><h2>Everything on this PC</h2>
+  <p>Starts the host, waits 25 s, then starts players 2 to N one after another (15 s apart).</p>
+  <button class="btn main" id="b-all">Start all players on this PC</button></div>
+ <div class="grid" style="margin-top:16px">
+  <div class="card"><h2>Paths</h2>
+   <label>Black Ops folder</label><input type="text" id="b-game">
+   <label>Plutonium folder</label><input type="text" id="b-plut">
+   <label>Mod (fs_game)</label><input type="text" id="b-mod">
+   <label>Map</label><input type="text" id="b-map">
+   <label>Host port</label><input type="text" id="b-port">
+  </div>
+  <div class="card"><h2>Players</h2>
+   <label>Player 1 (host)</label><input type="text" id="b-n1">
+   <label>Player 2</label><input type="text" id="b-n2">
+   <label>Player 3</label><input type="text" id="b-n3">
+   <label>Player 4</label><input type="text" id="b-n4">
+   <div style="margin-top:12px"><button class="btn alt" id="b-save">Save</button><button class="btn" id="b-openg">Open game folder</button><button class="btn" id="b-openp">Open Plutonium folder</button></div>
+  </div>
+ </div>
+</section>
+
+<section class="tab" id="t-log"><pre id="log"></pre><button class="btn" id="b-openlog">Open log file</button></section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+let S=null,editing=false;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+async function call(p,body){try{const r=await fetch('/api/'+p,{method:body?'POST':'GET',body:body?JSON.stringify(body):undefined});return await r.json()}catch(e){return{ok:false,msg:String(e)}}}
+async function act(p,body){const r=await call(p,body);toast(r.msg||'');refresh();return r}
+function cfgFromForm(){const c=Object.assign({},S.config);
+ for(const k of['gameDir','p2Dir','p2Name','hostIP','p2Port','extraArgs'])c[k]=$(k).value;
+ c.arrange=$('arrange').checked;c.layout=$('layout').value;c.console=$('console').checked;return c}
+function fill(){const c=S.config;
+ for(const k of['gameDir','p2Dir','p2Name','hostIP','p2Port','extraArgs'])$(k).value=c[k]||'';
+ $('arrange').checked=!!c.arrange;$('layout').value=c.layout||'side_keep';$('console').checked=!!c.console;$('joinIP').value=c.joinIP||''}
+function render(){
+ $('ver').textContent=S.title;document.title=S.title;
+ const st=(ok,t)=>`<span class="${ok?'ok':''}">${t}</span>`;
+ $('status').innerHTML=st(S.hasGame,'game found')+st(S.hasTekno,'Tekno launcher')+st(S.p2Ready,'player 2 folder ready')+st(S.win1>0,'player 1 window')+st(S.win2>0,'player 2 window');
+ $('ips').innerHTML=(S.ips||[]).map(i=>`<span class="chip" onclick="navigator.clipboard&&navigator.clipboard.writeText('${i}');toast('copied ${i}')">${i}</span>`).join('');
+ $('log').textContent=(S.log||[]).join('\n');
+ $('b-p2').disabled=!S.p2Ready;$('b-join').disabled=!S.p2Ready;
+ applyGame();renderGame();
+}
+async function refresh(){S=await call('state');if(!S)return;if(!editing&&!window._filled){fill();window._filled=true}if(!editing&&!window._gfilled){fillGame();window._gfilled=true}render()}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t))});
+document.querySelectorAll('input').forEach(i=>i.addEventListener('focus',()=>editing=true));
+$('b-p1').onclick=()=>act('start1',{});$('b-host').onclick=()=>act('start1',{});
+$('b-p2').onclick=()=>act('start2',{});$('b-arr').onclick=()=>act('arrange',{});
+$('b-join').onclick=()=>act('join',{IP:$('joinIP').value});
+$('b-prep').onclick=async()=>{await call('config',cfgFromForm());act('prepare',{})};
+$('b-save').onclick=async()=>{await act('config',cfgFromForm());editing=false};
+$('b-restore').onclick=()=>{if(confirm('Put the original zone files back? The co-op patches will be removed.'))act('restore',{})};
+$('b-open').onclick=()=>act('open',{What:'game'});$('b-openlog').onclick=()=>act('open',{What:'log'});
+
+const GAMES={
+ mw3:{brand:'Cooperative <span>Warfare</span>',sub:'Modern Warfare 3 &middot; campaign co-op',art:'art-mw3b.jpg',art3:'art-mw3.jpg',pos3:'50% 6%',portrait:1,light:1,pos:'50% 22%'},
+ bo1:{brand:'Cooperative <span>Warfare</span>',sub:'Black Ops &middot; Cuba co-op',art:'art-bo1.jpg',pos:'50% 2%',desc:'Starts Black Ops with your co-op mod folder. The full Cuba co-op flow still lives in the Black Ops co-op launcher; this just starts the game.'},
+ nx1:{brand:'Cooperative <span>Warfare</span>',sub:'Nexus &middot; NX1 co-op',art:'art-nx1.jpg',portrait:1,pos:'50% 10%',desc:'Starts the NX1 recompile. Set the exe path once (the Canary NX1 build).'},
+ s1:{brand:'Blacksmith <span>S1</span>',sub:'Sledgehammer SP &middot; Xbox 360 dev build, recompiled',art:'art-s1.jpg',desc:'Runs the ReXGlue recompiled S1 (default_patched.xex). Co-op test: install the Fusion patch below, then in game go Spec Ops &rarr; Missions &rarr; Fusion &rarr; Start Op with two controllers connected (split screen).'}
+};
+function curGame(){return(S&&S.config&&S.config.game)||'mw3'}
+function applyGame(){
+ const g=curGame(),G=GAMES[g]||GAMES.mw3;
+ document.body.dataset.g=g;
+ document.querySelectorAll('#games button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));
+ document.querySelector('.brand h1').innerHTML=G.brand;document.querySelector('.brand p').innerHTML=G.sub;
+ const h=$('hdr'),a=$('art'),a2=$('art2');h.classList.toggle('portrait',!!G.portrait);h.classList.toggle('light',!!G.light);h.classList.toggle('duo',!!G.art3);const a3=$('art3');if(G.art3){if(!a3.src.endsWith(G.art3))a3.src=G.art3;a3.style.objectPosition=G.pos3||'50% 20%'}
+ if(!a.src.endsWith(G.art))a.src=G.art;a.style.objectPosition=G.portrait?'':(G.pos||'');if(G.portrait){if(!a2.src.endsWith(G.art))a2.src=G.art;a2.style.objectPosition=G.pos||'50% 20%'}
+ const mw=g==='mw3';$('nav').style.display=mw?'':'none';$('status').style.display=mw?'':'none';
+ if(mw){const on=document.querySelector('nav button.on');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+(on?on.dataset.t:'play')))}
+ else{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id===(g==='bo1'?'t-bo1':'t-game')));
+  $('g-title').textContent=GAMES[g].sub.split('&middot;')[0].trim()||g;$('g-desc').textContent=G.desc;
+  $('g-s1extra').style.display=$('g-s1card').style.display=$('g-s1patch').style.display=g==='s1'?'':'none'}
+}
+function fillGame(){const g=curGame();if(g==='bo1'){fillBo1();return}if(g==='mw3'||!S.config.games)return;const c=S.config.games[g]||{};
+ $('g-exe').value=c.exe||'';$('g-dir').value=c.dir||'';$('g-args').value=c.args||'';
+ if(g==='s1'){$('g-pre').innerHTML=(S.s1Presets||[]).map((p,i)=>`<label><input type="radio" name="pre" value="${i}" ${(S.config.s1Preset||0)===i?'checked':''}> ${i+1} &middot; ${p}</label>`).join('')}}
+function renderGame(){const g=curGame();if(g==='bo1'){renderBo1();return}if(g==='mw3'||!S.games)return;const s=S.games[g]||{};
+ const st=(ok,t)=>`<span class="${ok?'ok':''}">${t}</span>`;
+ $('g-status').innerHTML=st(s.hasExe,'program found')+st(s.hasDir,'game folder found')+(g==='s1'?st(s.hasPatched,'default_patched.xex'):'');
+ if(g==='s1'){$('g-s1pst').innerHTML=st(!!s.patchSet,s.patchSet?('patch '+s.patchSet+' installed'):'patch not installed')+st(s.hasLoadVideo,'fusion_load.bik (loading video)')}
+ $('g-launch').disabled=!s.hasExe}
+function gameCfgFromForm(){const g=curGame(),c=Object.assign({},S.config);c.games=Object.assign({},c.games);
+ c.games[g]={exe:$('g-exe').value,dir:$('g-dir').value,args:$('g-args').value};
+ if(g==='s1'){const r=document.querySelector('input[name=pre]:checked');c.s1Preset=r?parseInt(r.value):0}return c}
+document.querySelectorAll('#games button').forEach(b=>b.onclick=async()=>{const c=Object.assign({},S.config);c.game=b.dataset.g;await call('config',c);S.config.game=b.dataset.g;window._gfilled=false;applyGame();await refresh()});
+$('g-save').onclick=async()=>{await act('config',gameCfgFromForm());editing=false};
+$('g-launch').onclick=async()=>{await call('config',gameCfgFromForm());act('launch',{Game:curGame()})};
+$('g-s1p24a').onclick=()=>act('s1patch',{Set:'v24a'});$('g-s1p24b').onclick=()=>act('s1patch',{Set:'v24b'});$('g-s1p24c').onclick=()=>act('s1patch',{Set:'v24c'});$('g-s1p18').onclick=()=>act('s1patch',{Set:'v18'});$('g-s1p17').onclick=()=>act('s1patch',{Set:'v17'});$('g-s1p16').onclick=()=>act('s1patch',{Set:'v16'});$('g-s1rst').onclick=()=>act('s1restore',{});
+$('g-open').onclick=()=>act('open',{What:curGame()});$('g-s1log').onclick=()=>act('open',{What:'s1log'});
+function fillBo1(){const b=S.config.bo1||{};
+ $('b-game').value=b.game||'';$('b-plut').value=b.plut||'';$('b-mod').value=b.mod||'';$('b-map').value=b.map||'';$('b-port').value=b.port||'';
+ for(let i=1;i<=4;i++)$('b-n'+i).value=(b.names||[])[i-1]||'';
+ $('b-players').value=b.players||2;$('b-connect').value=b.connect||'127.0.0.1'}
+function bo1FromForm(){const c=Object.assign({},S.config);
+ c.bo1={game:$('b-game').value,plut:$('b-plut').value,mod:$('b-mod').value,map:$('b-map').value,port:$('b-port').value,
+  names:[1,2,3,4].map(i=>$('b-n'+i).value),players:parseInt($('b-players').value)||2,connect:$('b-connect').value};return c}
+function renderBo1(){const s=(S.games||{}).bo1x||{};const st=(ok,t)=>`<span class="${ok?'ok':''}">${t}</span>`;
+ $('b-status').innerHTML=st(s.hasGame,'Black Ops found')+st(s.hasBoot,'Plutonium bootstrapper')+st(s.hasMod,'co-op mod installed');
+ const ok=s.hasGame&&s.hasBoot;['b-host2','b-lobby','b-j2','b-j3','b-j4','b-all'].forEach(i=>$(i).disabled=!ok);
+ const n=(S.config.bo1||{}).names||[];for(let i=1;i<=4;i++)document.querySelectorAll('.nm'+i).forEach(e=>e.textContent=n[i-1]||e.textContent)}
+async function bo1go(a,p){await call('config',bo1FromForm());act('bo1',{Action:a,Player:p||0})}
+$('b-host2').onclick=()=>bo1go('host');$('b-lobby').onclick=()=>bo1go('lobby');$('b-all').onclick=()=>bo1go('all');
+[2,3,4].forEach(i=>$('b-j'+i).onclick=()=>bo1go('join',i));
+$('b-save').onclick=async()=>{await act('config',bo1FromForm());editing=false};
+$('b-openg').onclick=()=>act('open',{What:'bo1'});$('b-openp').onclick=()=>act('open',{What:'bo1plut'});
+
+refresh();setInterval(refresh,2500);setInterval(()=>call('ping'),5000);call('ping');
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)call('ping')});
+addEventListener('pagehide',()=>{try{navigator.sendBeacon('/api/bye','{}')}catch(e){}});
+</script></body></html>

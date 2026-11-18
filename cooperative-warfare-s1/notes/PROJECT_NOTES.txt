@@ -1,0 +1,80 @@
+PROJECT NOTES (kept so work survives a long chat) - updated 2026-11-18 (S1 now runs)
+
+== S1 (Sledgehammer "Blacksmith" SP, May 2013 Xbox 360 dev build) via ReXGlue ==   STATUS 2026-11-18: LAUNCHES AND PLAYS ON PC
+- SDK: ReXGlue 0.11.0, PREBUILT release in C:\rexglue (find_package via CMAKE_PREFIX_PATH, NOT -DREXSDK_DIR).
+- Game files: <your game folder> (default_patched.xex is the one rexglue uses). Title ID 415608E0.
+- Project: <your game folder> exe\s1_sp (RelWithDebInfo exe + s1_sp.toml next to it, rewritten at every launch from the bat/launcher).
+- Fixes that made it run: hack_n (setjmp/longjmp emulation, fixed the Fusion load crash); hack_o (names missing dvars; ufoHitsTriggers script error is harmless).
+- WORKING GPU CONFIG (s1_sp.toml): [gpu.d3d12] render_target_path='rov' ; [gpu.xenos] readback_resolve='fast' ; async compilation left ON (default).
+  = launcher S1 preset 6 (CoopLauncher v0.3.6 default) = run_s1_v20_gfx.bat option 6.
+  Plus [hid] mnk_mode=true, mnk_mouse=true, mnk_sensitivity=6.0 (1.0 was far too slow).
+- What each test showed: default render targets (RTV) = black 3D + flicker. ROV path = correct picture (needs RTX-class GPU with ROV; RTX 3050 ok).
+  ROV + async OFF = looks frozen (blocking shader compiles, 0 FPS) - avoid. readback_memexport = no change. readback_resolve='full' = black screen.
+  readback_resolve='fast' (previous-frame readback) = FIXES the exposure flicker / white-out when the VTOL doors open.
+  Not helpful / untested: the 7 NX1 options (already default false), submit_on_primary_buffer_end, fuzzy alpha, native_2x_msaa off, float24 depth options.
+- Value types: readback_resolve is a STRING (none/fast/some/full) in gpu.xenos; gpu.d3d12 readback_resolve is a bool (do not use). CLI only accepts game_data_root update_data_root protect_zero mnk_mode log_level.
+- Performance: ~15-18 FPS in the VTOL, 7-14 in combat, dips to 4 in big explosions (ROV cost). F3 overlay = stats, F10 = SDK settings.
+- Whole Fusion level plays (VTOL, rappel drop, courtyard firefight, checkpoints).
+- FASTFILE FORMAT (zone files in the game dir, SP = unsigned):
+  header: "IWffu100" (SP, unsigned) / "IWff0100" (MP, signed, not yet decoded), then u32 version 0x4f2, u32 0x404, 8-byte build FILETIME (May 2013), u32 1.
+  small files: u32 0, u32 size, u32 size, then ONE zlib stream (78 01) from byte 40. decompressed = XFile header.
+  XFile header (big-endian): u32 size, u32 externalSize, u32 blockSize[7], then XAssetList {u32 scriptStringCount, ptr strings(-1), u32 assetCount, ptr assets(-1)},
+  then 1 spare u32, scriptStringCount pointers (-1/0), the strings, then assetCount x (u32 type, ptr). Rawfile body = {name -1, compressedLen, len, buffer -1} + name + zlib data.
+  big files (common.ff, fusion.ff): ~19 KB block table after the header, then a first huge zlib stream (the XFile) followed by many small zlib streams (stream data).
+  asset type ids seen: 2 (probably xanim), 4, 5, 9, 26 (menu file in patch.ff), 29, 33, 40 = rawfile, 42 = stringtable (first asset "sp/specopstable.csv"), ...
+  The game also probes update:\patch_<map>.ff and patch_ui.ff (update_data_root) = a hook point for our own patch fastfile; patch.ff is a valid 93-byte empty patch.
+- common.ff contents (extracted lists in s1_ff_findings_v01.zip): 545 script strings, 7778 assets. Contains Special Ops system: so_*.gsc names, popmenu_specialops_splitscreen_difficulty_p1/p2,
+  LiveParty* uiScripts, popup_waitforpartymembers, setNetCoOpDifficulty, COOP_* error strings (HOST_END_GAME, WAITINGFORPLAYER, WRONGCHECKSUM...), SCRIPT_COOP_REVIVE, devmap dvarstring(ui_load_so_level).
+  Extracted GSC source (s1_common_scripts_extracted.zip) is plain text = the dev build keeps source; unknown yet whether the game compiles it at load.
+- MP files exist (mp_dam.ff, *_mp.ff, signed IWff0100). common_mp.ff (360 MB) received, not decoded yet.
+- Milestone plan: (1) quick map-load command  (2) build own patch fastfile (script injection)  (3) player 2 spawns in the VTOL, rappels, has a model
+  (4) hook a custom map into the Spec Ops menu / use the netcoop code.  Later: performance work.
+- Tools: run_s1_v20_gfx.bat (GPU test menu, 1-9), CoopLauncher v0.3.6 (S1 tab, presets 1-9), ff_headers_v01.bat, ff_grab_v01.bat.
+
+== Cuba-Co-Op (Black Ops 1) ==  (details from earlier chats were lost in compaction - re-read the project folder before working)
+- v0.1.3 camera rig: untested. Woods spine back-bend: open. Phase 2: not started.
+
+== Nexus Co-Op (NX1) ==
+- 0.2.7 tram test, 0.2.8 Border guns test, animation bisect D/E: pending.
+
+== Cooperative Warfare (MW3 SP co-op, TeknoMW3 iw5sp 1.9.446) ==
+- Kits: v0.0.49Hxx folders. Latest: H34 (menu removed). Launcher: CoopLauncher v0.3.6 (all 4 projects: MW3, BO1, NX1, S1).
+- Rules: version in every patch + debug line + .bat title; dvars/console unusable in Tekno.
+- Known: buttonpressed-based checkpoint menu crashes the game (removed in h34). patch_innocent.ff overrides maps/innocent (apply_innocent.bat patches both zones).
+- Open: BT ending for 2 players, PNG/Turbulence fit, P2 A-pose in Innocent, checkpoint menu via another method.
+
+=== S1 SCRIPT OVERRIDE WORKS (v0.0.50, 2026-11-18) ===
+- Compiled scripts are asset type 41 (ScriptFile, 6 words: name,compLen,len,bytecodeLen,buf,bytecode + name\0 + zlib(stack) + bytecode).
+  Type 40 = rawfile (cfg etc.). Source .gsc rawfiles in common.ff are NOT executed.
+- S1 360 dev build uses IW5 (MW3) bytecode; use gsc-tool -g iw5 -s xb2 -z (zonetool .cgsc + .cgsc.stack). Builtin/field ids differ from IW5:
+  decompile original -> names are scrambled but round-trip exactly; write hook source with the *decoded* names.
+  Known: setdvar = "getdvar"(2 args), iprintlnbold = "isplayernumber", iprintln = "isplayer", isdefined = "setdvarifuninitialized", gettime = "animhasnotetrack".
+- Override goes in patch.ff (patch of common zone), NOT patch_fusion.ff. Keep original menu asset (type 26) + add script asset.
+- BLOCK SIZES in the xfile header MUST be generous: [0x1000, 0x20000 x6]. Small guessed sizes crash during level load.
+- WORKING TEST: v09 C_hook overrides maps/_player_death (run from _load via thread maps\_player_death::main). Bold message + console tick shown in-game.
+- Next: spawn a 2nd entity/player (fusion VTOL seat, rappel, model), build compile pipeline into a tool.
+
+=== S1 SPEC OPS SLOT -> FUSION (v16, WORKS, 2026-11-18) ===
+MW3 co-op patch v0.0.50. Result: Spec Ops Missions slot launches fusion in split screen, 2 players, both look/walk.
+- Level name is HARDCODED in ui.ff menu actions (setdvar ui_load_so_level "so_rescue_hijack" + coop_mapName etc.), NOT in specopstable.csv.
+  Fix: byte-edit ui.dec same length: '"so_rescue_hijack" ;' -> '"fusion"           ;' (pad spaces AFTER the closing quote, inside the same command string;
+  spaces INSIDE the quotes end up in the zone name and break loading). Recompress zlib, header bytes[:32] + (total,total).
+- Specops mode (specialops=1) loads patch_specialops.ff + common_specialops.ff: they must exist (copies of our patch.ff work).
+- Text: localize assets are asset type 29 (type 2 = xanim, crashes). Override the ORIGINAL keys SPECIAL_OPS_SO_RESCUE_HIJACK / _DESC in patch.ff
+  (record: ptr -1, name ptr -1, value\0 name\0). Name + description show on slot, Split Screen screen and loading screen.
+- patch.ff = [26 menu(orig body), 42 table, 29, 29]; table col1 edit is not what launches the level.
+- Open: bottom viewport sometimes white in intro cutscene frame; "locked for teammate" notice; preview image (levelshot material); P2 VTOL seat/rappel/model; same method for NX1.
+
+S1 UPDATE (v17/v18)
+- Fusion slot: ui.ff with specialops 0 gives loadout (v17). v18 adds a patch.ff script hook (maps/_player_death) that gives Player 2 the M160 Custom.
+- Builtin ID table recovered: default_patched.xex is XEX2, devkit-key encrypted, LZX (window 0x8000, 30 position slots). default.pdb belongs to it (partial names). Method table at image offset 0x1e160.. {0,id,func}; PlayerCmd order matches 1-s1_sp.map order. See S1_builtin_id_map_v01.txt (FreezeControls = 0x8110 = write stoplocalsound; DisableWeapons 0x8104, EnableWeapons 0x8105).
+- No maps/_laststand exists in the shipped scripts (real common_specialops.ff missing) -> revive must be written from scratch.
+
+== SESSION LOG 2026-11-18 (S1 Fusion co-op) ==
+- Spec Ops mode OFF for the Fusion slot (v17+): specialops=1 makes _load.gsc skip init_loadout() -> no guns/models. Side effect: campaign-style loading screen lost the Fusion title/description text (keys unknown).
+- Hook (patch.ff type 41 maps/_player_death, thread from codecallback_playerconnect) works. RULES learned: (1) never setdvar/getdvar-marker unknown dvars (fatal in current exe); show progress with iprintlnbold (write decoded name isplayernumber). (2) NO cross-file calls (common_scripts\utility::x) from the hook script - level fails to load. (3) level.player2 is NOT set in this mode: find P2 with getentarray("player","classname") (decoded: announcement) != level.player.
+- Decoded names used: giveweapon=getfractionstartammo, switchtoweapon=setplayerangles, setOffhandSecondaryClass=closepopupmenu, setViewmodel=enableweaponswitch, setOrigin=setoffhandprimaryclass, disableweapons=freezecontrols, freezecontrols=stoplocalsound. Full table: S1_builtin_id_map_v01.txt.
+- Kits: v17 (loadout), v18 (P2 gun, never ran), v19-v22 (crashes: setdvar markers / cross-file calls), v23a (P2 gun+viewmodel), v23b (+VTOL seat via playerlinktodelta to warbird tag_guy0). v22a/b showed "hook running" only (P2 not found).
+- Launcher v0.4.7: keybind layout written to s1_sp.toml ([hid] keybind_*; names like MouseLeft, LeftShift, LeftCtrl).
+- Plan: revive = port MW3 maps/_laststand (decompiled at /tmp/ls, 1593 lines, 71 builtins need S1 IDs); player models; campaign loading text; preview image.
+- Chat backups: notes/chat_backups/ (raw transcript copy at each save).
